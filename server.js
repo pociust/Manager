@@ -84,6 +84,20 @@ function viewEmployees() {
         "Respiratory",
         "Testing"
       ]
+    },
+    {
+      type: "confirm",
+      name: "manager",
+      message: "Are you a manager?",
+      default: false
+    },
+    {
+      type: "input",
+      name: "role",
+      message: "What is your role?",
+      when: function(answers) {
+        return answers.manager === false;
+      }
     }
   ]);
   //   first_name
