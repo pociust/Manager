@@ -1,24 +1,24 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 
-// const connection = mysql.createConnection({
-//   host: "localhost",
+const connection = mysql.createConnection({
+  host: "localhost",
 
-//   // Your port; if not 3306
-//   port: 3306,
+  // Your port; if not 3306
+  port: 3306,
 
-//   // Your username
-//   user: "root",
+  // Your username
+  user: "root",
 
-//   // Your password
-//   password: "way2great",
-//   database: "greatbay_db"
-// });
+  // Your password
+  password: "way2great",
+  database: "greatbay_db"
+});
 
-// connection.connect(function(err) {
-//   if (err) throw err;
-//   startServer();
-// });
+connection.connect(function(err) {
+  if (err) throw err;
+  startServer();
+});
 
 function startServer() {
   inquirer
@@ -28,7 +28,7 @@ function startServer() {
         name: "init",
         message: "What would you like to do?",
         choices: [
-          "View all employees",
+          "Add an employee",
           "View all employees by department",
           "View all managers",
           "EXIT"
@@ -37,7 +37,7 @@ function startServer() {
     ])
     .then(answer => {
       console.log("answer1", answer.init);
-      if (answer.init === "View all employees") {
+      if (answer.init === "Add an employee") {
         console.log("all employees");
         viewEmployees();
       } else if (answer.init === "View all employees by department") {
@@ -48,62 +48,90 @@ function startServer() {
         // bidAuction();
       } else {
         console.log("close");
-        // connection.end();
+        connection.end();
       }
     });
 }
 
 function viewEmployees() {
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "firstName",
-      message: "What is your first name?",
-      filter: function(val) {
-        return val.charAt(0).toUpperCase() + val.slice(1);
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "firstName",
+        message: "What is your first name?",
+        filter: function(val) {
+          return val.charAt(0).toUpperCase() + val.slice(1);
+        }
+      },
+      {
+        type: "input",
+        name: "lastName",
+        message: "What is your last name?",
+        filter: function(val) {
+          return val.charAt(0).toUpperCase() + val.slice(1);
+        }
+      },
+      {
+        type: "rawlist",
+        name: "department",
+        message: "What department do you work for?",
+        choices: [
+          "Therapy",
+          "Nursing",
+          "Doctors",
+        ]
+      },
+      {
+        type: "confirm",
+        name: "manager",
+        message: "Are you a manager?",
+        default: false
+      },
+      {
+        type: "rawlist",
+        name: "role",
+        message: "What is your role?",
+        choices: [
+          "Physical Therapist",
+          "Occupational Therapist",
+          "Speech Therapist"
+        ],
+        when: function(answers) {
+          return answers.manager === false && answers.department === "Therapy";
+        }
+      },
+      {
+        type: "rawlist",
+        name: "role",
+        message: "What is your role?",
+        choices: [
+          "Tele Nurse",
+          "ICU Nurse",
+          "Surgery Nurse"
+        ],
+        when: function(answers) {
+          return answers.manager === false && answers.department === "Nursing";
+        }
+      },
+      {
+        type: "rawlist",
+        name: "role",
+        message: "What is your role?",
+        choices: [
+          "PCP",
+          "Surgon",
+          "Specialist"
+        ],
+        when: function(answers) {
+          return answers.manager === false && answers.department === "Doctors";
+        }
       }
-    },
-    {
-      type: "input",
-      name: "lastName",
-      message: "What is your last name?",
-      filter: function(val) {
-        return val.charAt(0).toUpperCase() + val.slice(1);
-      }
-    },
-    {
-      type: "rawlist",
-      name: "department",
-      message: "What department do you work for?",
-      choices: [
-        "Therapy",
-        "Nursing",
-        "Doctors",
-        "Nursing Assistant",
-        "Social Work",
-        "Respiratory",
-        "Testing"
-      ]
-    },
-    {
-      type: "confirm",
-      name: "manager",
-      message: "Are you a manager?",
-      default: false
-    },
-    {
-      type: "input",
-      name: "role",
-      message: "What is your role?",
-      when: function(answers) {
-        return answers.manager === false;
-      }
-    }
-  ]);
-  //   first_name
-  // last_name
-  // role_id
-  // manager_id
+    ])
+    .then(answer => {
+      console.log(answer);
+      startServer();
+    });
 }
 
 function viewDepartment() {
@@ -117,10 +145,6 @@ function viewDepartment() {
           "Therapy",
           "Nursing",
           "Doctors",
-          "Nursing Assistant",
-          "Social Work",
-          "Respiratory",
-          "Testing"
         ]
       }
     ])
@@ -128,5 +152,3 @@ function viewDepartment() {
       console.log(select.department);
     });
 }
-
-startServer();
