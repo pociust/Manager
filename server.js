@@ -12,7 +12,7 @@ const connection = mysql.createConnection({
 
   // Your password
   password: "way2great",
-  database: "greatbay_db"
+  database: "company_db"
 });
 
 connection.connect(function(err) {
@@ -29,8 +29,9 @@ function startServer() {
         message: "What would you like to do?",
         choices: [
           "Add an employee",
-          "View all employees by department",
+          "View all employees",
           "View all managers",
+          "View employees by department",
           "EXIT"
         ]
       }
@@ -38,22 +39,22 @@ function startServer() {
     .then(answer => {
       console.log("answer1", answer.init);
       if (answer.init === "Add an employee") {
-        console.log("all employees");
+        addEmployees();
+      } else if (answer.init === "View all employees") {
         viewEmployees();
-      } else if (answer.init === "View all employees by department") {
-        console.log("department");
+      } else if (answer.init === "View employees by department") {
         viewDepartment();
-      } else if (answer.init === "3") {
-        console.log("View all managers");
-        // bidAuction();
-      } else {
-        console.log("close");
+      } else if (answer.init === "View all managers") {
+        viewManagers();
+      } /*else if (answer.init === "View all managers") {
+        viewManagers();
+      } */ else {
         connection.end();
       }
     });
 }
 
-function viewEmployees() {
+function addEmployees() {
   inquirer
     .prompt([
       {
@@ -76,11 +77,7 @@ function viewEmployees() {
         type: "rawlist",
         name: "department",
         message: "What department do you work for?",
-        choices: [
-          "Therapy",
-          "Nursing",
-          "Doctors",
-        ]
+        choices: ["Therapy", "Nursing", "Doctors"]
       },
       {
         type: "confirm",
@@ -105,11 +102,7 @@ function viewEmployees() {
         type: "rawlist",
         name: "role",
         message: "What is your role?",
-        choices: [
-          "Tele Nurse",
-          "ICU Nurse",
-          "Surgery Nurse"
-        ],
+        choices: ["Tele Nurse", "ICU Nurse", "Surgery Nurse"],
         when: function(answers) {
           return answers.manager === false && answers.department === "Nursing";
         }
@@ -118,11 +111,7 @@ function viewEmployees() {
         type: "rawlist",
         name: "role",
         message: "What is your role?",
-        choices: [
-          "PCP",
-          "Surgon",
-          "Specialist"
-        ],
+        choices: ["PCP", "Surgon", "Specialist"],
         when: function(answers) {
           return answers.manager === false && answers.department === "Doctors";
         }
@@ -130,8 +119,71 @@ function viewEmployees() {
     ])
     .then(answer => {
       console.log(answer);
+      console.log(answer.role);
+      let role_id = "";
+      if (answer.role === "Physical Therapist") {
+        role_id = "1";
+      }
+      if (answer.role === "Occupational Therapist") {
+        role_id = "2";
+      }
+      if (answer.role === "Speech Therapist") {
+        role_id = "3";
+      }
+      if (answer.manager === true && answer.department === "Therapy") {
+        role_id = "4";
+      }
+      if (answer.role === "Tele Nurse") {
+        role_id = "5";
+      }
+      if (answer.role === "ICU Nurse") {
+        role_id = "6";
+      }
+      if (answer.role === "Surgery Nurse") {
+        role_id = "7";
+      }
+      if (answer.manager === true && answer.department === "Nursing") {
+        role_id = "8";
+      }
+      if (answer.role === "PCP") {
+        role_id = "9";
+      }
+      if (answer.role === "Surgon") {
+        role_id = "10";
+      }
+      if (answer.role === "Specialist") {
+        role_id = "11";
+      }
+      if (answer.manager === true && answer.department === "Doctors") {
+        role_id = "12";
+      }
+
+      console.log("roleid", role_id);
+      // connection.query(
+      //   `INSERT INTO employee (first_name, last_name, role_id)
+      //   values ("${answer.firstName}", "${answer.lastName}", "1");`,
+      //   function(err, res) {
+      //     if (err) throw err;
+      //     console.table(res);
+      //     startServer();
+      // }
+      // );
+
       startServer();
     });
+}
+
+function viewEmployees() {
+  connection.query(
+    `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
+    INNER JOIN employee_role ON employee.role_id = employee_role.id 
+    INNER JOIN  department ON employee_role.department_id = department.id`,
+    function(err, res) {
+      if (err) throw err;
+      console.table(res);
+      startServer();
+    }
+  );
 }
 
 function viewDepartment() {
@@ -141,14 +193,34 @@ function viewDepartment() {
         type: "rawlist",
         name: "department",
         message: "What department do you want?",
-        choices: [
-          "Therapy",
-          "Nursing",
-          "Doctors",
-        ]
+        choices: ["Therapy", "Nursing", "Doctors"]
       }
     ])
     .then(select => {
-      console.log(select.department);
+      connection.query(
+        `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
+        INNER JOIN employee_role ON employee.role_id = employee_role.id 
+        INNER JOIN  department ON employee_role.department_id = department.id 
+        WHERE department_name = "${select.department}"`,
+        function(err, res) {
+          if (err) throw err;
+          console.table(res);
+          startServer();
+        }
+      );
     });
+}
+
+function viewManagers() {
+  connection.query(
+    `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
+    INNER JOIN employee_role ON employee.role_id = employee_role.id
+    INNER JOIN  department ON employee_role.department_id = department.id
+    WHERE role_title = "manager"`,
+    function(err, res) {
+      if (err) throw err;
+      console.table(res);
+      startServer();
+    }
+  );
 }

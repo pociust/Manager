@@ -69,3 +69,13 @@ INSERT INTO employee_role (role_title, role_salary, department_id) values ('mana
 SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
 INNER JOIN employee_role ON employee.role_id = employee_role.id
 INNER JOIN  department ON employee_role.department_id = department.id
+WHERE role_title = "manager";
+
+SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
+INNER JOIN employee_role ON employee.role_id = employee_role.id 
+INNER JOIN  department ON employee_role.department_id = department.id 
+WHERE department_name = "${select.department}";
+
+SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
+INNER JOIN employee_role ON employee.role_id = employee_role.id 
+INNER JOIN  department ON employee_role.department_id = department.id;
