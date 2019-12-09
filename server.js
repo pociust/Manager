@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const cTable = require("console.table");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -24,7 +25,7 @@ function startServer() {
   inquirer
     .prompt([
       {
-        type: "rawlist",
+        type: "list",
         name: "init",
         message: "What would you like to do?",
         choices: [
@@ -32,12 +33,12 @@ function startServer() {
           "View all employees",
           "View all managers",
           "View employees by department",
+          "Edit an employee",
           "EXIT"
         ]
       }
     ])
     .then(answer => {
-      console.log("answer1", answer.init);
       if (answer.init === "Add an employee") {
         addEmployees();
       } else if (answer.init === "View all employees") {
@@ -46,9 +47,9 @@ function startServer() {
         viewDepartment();
       } else if (answer.init === "View all managers") {
         viewManagers();
-      } /*else if (answer.init === "View all managers") {
-        viewManagers();
-      } */ else {
+      } else if (answer.init === "Edit an employee") {
+        editEmployee();
+      } else {
         connection.end();
       }
     });
@@ -74,7 +75,7 @@ function addEmployees() {
         }
       },
       {
-        type: "rawlist",
+        type: "list",
         name: "department",
         message: "What department do you work for?",
         choices: ["Therapy", "Nursing", "Doctors"]
@@ -86,7 +87,7 @@ function addEmployees() {
         default: false
       },
       {
-        type: "rawlist",
+        type: "list",
         name: "role",
         message: "What is your role?",
         choices: [
@@ -99,7 +100,7 @@ function addEmployees() {
         }
       },
       {
-        type: "rawlist",
+        type: "list",
         name: "role",
         message: "What is your role?",
         choices: ["Tele Nurse", "ICU Nurse", "Surgery Nurse"],
@@ -108,7 +109,7 @@ function addEmployees() {
         }
       },
       {
-        type: "rawlist",
+        type: "list",
         name: "role",
         message: "What is your role?",
         choices: ["PCP", "Surgon", "Specialist"],
@@ -118,8 +119,6 @@ function addEmployees() {
       }
     ])
     .then(answer => {
-      console.log(answer);
-      console.log(answer.role);
       let role_id = "";
       if (answer.role === "Physical Therapist") {
         role_id = "1";
@@ -157,19 +156,15 @@ function addEmployees() {
       if (answer.manager === true && answer.department === "Doctors") {
         role_id = "12";
       }
-
-      console.log("roleid", role_id);
-      // connection.query(
-      //   `INSERT INTO employee (first_name, last_name, role_id)
-      //   values ("${answer.firstName}", "${answer.lastName}", "1");`,
-      //   function(err, res) {
-      //     if (err) throw err;
-      //     console.table(res);
-      //     startServer();
-      // }
-      // );
-
-      startServer();
+      connection.query(
+        `INSERT INTO employee (first_name, last_name, role_id)
+        values ("${answer.firstName}", "${answer.lastName}", "${role_id}");`,
+        function(err, res) {
+          if (err) throw err;
+          console.log("employee added");
+          startServer();
+        }
+      );
     });
 }
 
@@ -190,7 +185,7 @@ function viewDepartment() {
   inquirer
     .prompt([
       {
-        type: "rawlist",
+        type: "list",
         name: "department",
         message: "What department do you want?",
         choices: ["Therapy", "Nursing", "Doctors"]
@@ -223,4 +218,34 @@ function viewManagers() {
       startServer();
     }
   );
+}
+let employeeList = [];
+function editEmployee() {
+  new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT first_name, last_name FROM employee 
+    INNER JOIN employee_role ON employee.role_id = employee_role.id 
+    INNER JOIN  department ON employee_role.department_id = department.id`,
+      function(err, res) {
+        if (err) throw err;
+        res.forEach(employee =>
+          employeeList.push(`${employee.first_name} ${employee.last_name}`)
+        );
+        resolve(employeeList);
+      }
+    );
+  }).then(employee => {
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "singleEmployee",
+          message: "Who do you want to edit?",
+          choices: employeeList
+        }
+      ])
+      .then(worker => {
+        console.log(worker);
+      });
+  });
 }
