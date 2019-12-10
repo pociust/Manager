@@ -1,6 +1,9 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+// const role_id = {
+//   "Physical Therapy"
+// }
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -112,7 +115,7 @@ function addEmployees() {
         type: "list",
         name: "role",
         message: "What is your role?",
-        choices: ["PCP", "Surgon", "Specialist"],
+        choices: ["PCP", "Surgeon", "Specialist"],
         when: function(answers) {
           return answers.manager === false && answers.department === "Doctors";
         }
@@ -120,40 +123,42 @@ function addEmployees() {
     ])
     .then(answer => {
       let role_id = "";
+
+
       if (answer.role === "Physical Therapist") {
         role_id = "1";
       }
-      if (answer.role === "Occupational Therapist") {
+      else if (answer.role === "Occupational Therapist") {
         role_id = "2";
       }
-      if (answer.role === "Speech Therapist") {
+      else if (answer.role === "Speech Therapist") {
         role_id = "3";
       }
-      if (answer.manager === true && answer.department === "Therapy") {
+      else if (answer.manager === true && answer.department === "Therapy") {
         role_id = "4";
       }
-      if (answer.role === "Tele Nurse") {
+      else if (answer.role === "Tele Nurse") {
         role_id = "5";
       }
-      if (answer.role === "ICU Nurse") {
+      else if (answer.role === "ICU Nurse") {
         role_id = "6";
       }
-      if (answer.role === "Surgery Nurse") {
+      else if (answer.role === "Surgery Nurse") {
         role_id = "7";
       }
-      if (answer.manager === true && answer.department === "Nursing") {
+      else if (answer.manager === true && answer.department === "Nursing") {
         role_id = "8";
       }
-      if (answer.role === "PCP") {
+      else if (answer.role === "PCP") {
         role_id = "9";
       }
-      if (answer.role === "Surgon") {
+      else if (answer.role === "Surgeon") {
         role_id = "10";
       }
-      if (answer.role === "Specialist") {
+      else if (answer.role === "Specialist") {
         role_id = "11";
       }
-      if (answer.manager === true && answer.department === "Doctors") {
+      else if (answer.manager === true && answer.department === "Doctors") {
         role_id = "12";
       }
       connection.query(
@@ -211,7 +216,7 @@ function viewManagers() {
     `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
     INNER JOIN employee_role ON employee.role_id = employee_role.id
     INNER JOIN  department ON employee_role.department_id = department.id
-    WHERE role_title = "manager"`,
+    WHERE role_title = "Manager"`,
     function(err, res) {
       if (err) throw err;
       console.table(res);
@@ -223,18 +228,23 @@ let employeeList = [];
 function editEmployee() {
   new Promise((resolve, reject) => {
     connection.query(
-      `SELECT first_name, last_name FROM employee 
+      `SELECT first_name, last_name, employee.id FROM employee 
     INNER JOIN employee_role ON employee.role_id = employee_role.id 
     INNER JOIN  department ON employee_role.department_id = department.id`,
       function(err, res) {
         if (err) throw err;
         res.forEach(employee =>
-          employeeList.push(`${employee.first_name} ${employee.last_name}`)
+          employeeList.push({
+            first: employee.first_name,
+            last: employee.last_name,
+            id: employee.id
+          })
         );
         resolve(employeeList);
       }
     );
   }).then(employee => {
+    console.log("1", employee);
     inquirer
       .prompt([
         {
@@ -245,7 +255,18 @@ function editEmployee() {
         }
       ])
       .then(worker => {
-        console.log(worker);
+        // connection.query(
+        //   `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
+        //   INNER JOIN employee_role ON employee.role_id = employee_role.id
+        //   INNER JOIN  department ON employee_role.department_id = department.id
+        //   WHERE `,
+        //   function(err, res) {
+        //     if (err) throw err;
+        //     console.table(res);
+        //     startServer();
+        //   }
+        // );
+        console.log("employee", worker);
       });
   });
 }
