@@ -1,6 +1,11 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const sqlQuery = `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
+INNER JOIN employee_role ON employee.role_id = employee_role.id
+INNER JOIN  department ON employee_role.department_id = department.id`;
+let employeeList = [];
+
 const roleSelect = {
   "Physical Therapist": "1",
   "Occupational Therapist": "2",
@@ -159,16 +164,11 @@ function addEmployees() {
 }
 
 function viewEmployees() {
-  connection.query(
-    `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
-    INNER JOIN employee_role ON employee.role_id = employee_role.id 
-    INNER JOIN  department ON employee_role.department_id = department.id`,
-    function(err, res) {
-      if (err) throw err;
-      console.table(res);
-      startServer();
-    }
-  );
+  connection.query(sqlQuery, function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    startServer();
+  });
 }
 
 function viewDepartment() {
@@ -183,10 +183,7 @@ function viewDepartment() {
     ])
     .then(select => {
       connection.query(
-        `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee 
-        INNER JOIN employee_role ON employee.role_id = employee_role.id 
-        INNER JOIN  department ON employee_role.department_id = department.id 
-        WHERE department_name = "${select.department}"`,
+        `${sqlQuery} WHERE department_name = "${select.department}"`,
         function(err, res) {
           if (err) throw err;
           console.table(res);
@@ -197,19 +194,16 @@ function viewDepartment() {
 }
 
 function viewManagers() {
-  connection.query(
-    `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
-    INNER JOIN employee_role ON employee.role_id = employee_role.id
-    INNER JOIN  department ON employee_role.department_id = department.id
-    WHERE role_title = "Manager"`,
-    function(err, res) {
-      if (err) throw err;
-      console.table(res);
-      startServer();
-    }
-  );
+  connection.query(`${sqlQuery} WHERE role_title = "Manager"`, function(
+    err,
+    res
+  ) {
+    if (err) throw err;
+    console.table(res);
+    startServer();
+  });
 }
-let employeeList = [];
+
 function editEmployee() {
   new Promise((resolve, reject) => {
     connection.query(
@@ -239,15 +233,51 @@ function editEmployee() {
       ])
       .then(worker => {
         connection.query(
-          `SELECT first_name, last_name, role_title, role_salary, department_name FROM employee
+          `SELECT first_name, last_name, role_title, role_salary, department_name, employee.id FROM employee
           INNER JOIN employee_role ON employee.role_id = employee_role.id
           INNER JOIN  department ON employee_role.department_id = department.id
           WHERE employee.id = "${worker.singleEmployee}"`,
           function(err, res) {
             if (err) throw err;
             console.table(res);
+            updateEmployee(res[0].id);
           }
         );
       });
   });
+}
+
+function updateEmployee(id) {
+  let userUpdateID = id;
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "updateChoice",
+        message: "What do you want to do?",
+        choices: [
+          "Delete employee",
+          "Change role",
+          "Promote to manager",
+          "Update salary"
+        ]
+      }
+    ])
+    .then(answer => {
+      if (answer.updateChoice === "Delete employee") {
+        connection.query(
+          `DELETE FROM employee WHERE employee.id = "${userUpdateID}"`,
+          function(err, res) {
+            if (err) throw err;
+            console.log("employee deleted");
+          }
+        );
+      } else if (answer.updateChoice === "Change role") {
+        console.log("Change role", userUpdateID);
+      } else if (answer.updateChoice === "Promote to manager") {
+        console.log("Promote to manager", userUpdateID);
+      } else if (answer.updateChoice === "Update salary") {
+        console.log("Update salary", userUpdateID);
+      }
+    });
 }
