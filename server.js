@@ -207,7 +207,7 @@ function viewManagers() {
 function editEmployee() {
   new Promise((resolve, reject) => {
     connection.query(
-      `SELECT first_name, last_name, employee.id FROM employee 
+      `SELECT first_name, last_name, employee.id, department_name FROM employee 
     INNER JOIN employee_role ON employee.role_id = employee_role.id 
     INNER JOIN  department ON employee_role.department_id = department.id`,
       function(err, res) {
@@ -215,7 +215,7 @@ function editEmployee() {
         res.forEach(employee =>
           employeeList.push({
             name: `${employee.first_name} ${employee.last_name}`,
-            value: `${employee.id}`
+            value: [`${employee.id}`, `${employee.department_name}`]
           })
         );
         resolve(employeeList);
@@ -236,11 +236,13 @@ function editEmployee() {
           `SELECT first_name, last_name, role_title, role_salary, department_name, employee.id FROM employee
           INNER JOIN employee_role ON employee.role_id = employee_role.id
           INNER JOIN  department ON employee_role.department_id = department.id
-          WHERE employee.id = "${worker.singleEmployee}"`,
+          WHERE employee.id = "${worker.singleEmployee[0]}"`,
           function(err, res) {
             if (err) throw err;
             console.table(res);
-            updateEmployee(res[0].id);
+            let rawDataWorker = [res[0].id, res[0].department_name];
+
+            updateEmployee(rawDataWorker);
           }
         );
       });
@@ -248,7 +250,9 @@ function editEmployee() {
 }
 
 function updateEmployee(id) {
-  let userUpdateID = id;
+  let userUpdateID = id[0];
+  let userUpdateDepartment = id[1];
+
   inquirer
     .prompt([
       {
@@ -259,7 +263,7 @@ function updateEmployee(id) {
           "Delete employee",
           "Change role",
           "Promote to manager",
-          "Update salary"
+          "Go back"
         ]
       }
     ])
@@ -270,14 +274,87 @@ function updateEmployee(id) {
           function(err, res) {
             if (err) throw err;
             console.log("employee deleted");
+            startServer();
           }
         );
       } else if (answer.updateChoice === "Change role") {
-        console.log("Change role", userUpdateID);
+        changeEmployeeRole(userUpdateDepartment, userUpdateID);
       } else if (answer.updateChoice === "Promote to manager") {
-        console.log("Promote to manager", userUpdateID);
-      } else if (answer.updateChoice === "Update salary") {
-        console.log("Update salary", userUpdateID);
+        promoteToManager(userUpdateDepartment, userUpdateID);
+      } else if (answer.updateChoice === "Go back") {
+        startServer();
       }
     });
+}
+
+function changeEmployeeRole(newRole, ID) {
+  let changeRole = newRole;
+  let changeRoleAtID = ID;
+
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "role",
+        message: "What is their new role?",
+        choices: [
+          "Physical Therapist",
+          "Occupational Therapist",
+          "Speech Therapist"
+        ],
+        when: function() {
+          return changeRole === "Therapy";
+        }
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "What is your role?",
+        choices: ["Tele Nurse", "ICU Nurse", "Surgery Nurse"],
+        when: function() {
+          return changeRole === "Nursing";
+        }
+      },
+      {
+        type: "list",
+        name: "role",
+        message: "What is your role?",
+        choices: ["PCP", "Surgeon", "Specialist"],
+        when: function() {
+          return changeRole === "Doctors";
+        }
+      }
+    ])
+    .then(answer => {
+      let role_id = null;
+      role_id = roleSelect[answer.role];
+
+      connection.query(
+        `UPDATE employee SET role_id=${role_id} WHERE id=${changeRoleAtID};`,
+        function(err, res) {
+          if (err) throw err;
+          console.log(`employee updated to ${answer.role}`);
+          startServer();
+        }
+      );
+    });
+}
+
+function promoteToManager(newManager, ID) {
+  if (newManager === "Therapy") {
+    role_id = "4";
+  } else if (newManager === "Nursing") {
+    role_id = "8";
+  } else if (newManager === "Doctors") {
+    role_id = "12";
+  }
+
+  connection.query(
+    `UPDATE employee SET role_id=${role_id} WHERE id=${ID};`,
+    function(err, res) {
+      if (err) throw err;
+      console.log(`Congratulations Mr/Mrs manager!`);
+      startServer();
+    }
+  );
 }
