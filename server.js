@@ -31,7 +31,7 @@ const connection = mysql.createConnection({
   user: "root",
 
   // Your password
-  password: "way2great",
+  password: "blank",
   database: "company_db"
 });
 
@@ -182,10 +182,12 @@ function viewDepartment() {
       }
     ])
     .then(select => {
+      let data = [];
       connection.query(
         `${sqlQuery} WHERE department_name = "${select.department}"`,
         function(err, res) {
           if (err) throw err;
+          data.push(res);
           console.table(res);
           startServer();
         }
